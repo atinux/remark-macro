@@ -8,6 +8,7 @@
   "scripts": {
     "lint": "standard",
     "pretest": "npm run lint",
+    "prepublishOnly": "npm run build",
     "test": "japa",
     "build": "babel index.js > browser.js --presets=env"
   },
