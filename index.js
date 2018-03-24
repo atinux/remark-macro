@@ -141,7 +141,7 @@ module.exports = function () {
      * @type {Object}
      */
     const macroFnPayload = {
-      transfomer: this,
+      transformer: this,
       eat,
       badNode
     }
