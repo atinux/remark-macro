@@ -113,7 +113,7 @@ module.exports = function () {
         break
       }
 
-      if (line !== `[${macro}]`) {
+      if (!line.startsWith(`[${macro}`)) {
         tag.children.push(line)
       }
     }
@@ -144,6 +144,15 @@ module.exports = function () {
       transformer: this,
       eat,
       badNode
+    }
+
+    propsHash.trim = propsHash.trim || ['true']
+
+    /**
+     * Trim macro content, unless instructured
+     */
+    if (propsHash.trim[0] === 'true') {
+      tag.children = tag.children.map((line) => line.trim())
     }
 
     const children = tag.children.join('\n')
