@@ -10,7 +10,7 @@
     "pretest": "npm run lint",
     "prepublishOnly": "npm run build",
     "test": "japa",
-    "build": "babel index.js > browser.js --presets=env"
+    "build": "rollup -c"
   },
   "keywords": [
     "remark",
