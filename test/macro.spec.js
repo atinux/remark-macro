@@ -48,7 +48,7 @@ test.group('Macroable', (group) => {
     assert.plan(4)
 
     macroable.addMacro('alert', function (content, props, { eat }) {
-      assert.deepEqual(props, {})
+      assert.deepEqual(props, { trim: ['true'] })
       assert.equal(eat.now().line, 3)
       assert.equal(content, 'Hey dude')
     })
@@ -71,13 +71,13 @@ test.group('Macroable', (group) => {
     assert.plan(7)
 
     macroable.addMacro('alert', function (content, props, { eat }) {
-      assert.deepEqual(props, {})
+      assert.deepEqual(props, { trim: ['true'] })
       assert.equal(eat.now().line, 3)
       assert.equal(content, 'Hey dude')
     })
 
     macroable.addMacro('note', function (content, props, { eat }) {
-      assert.deepEqual(props, {})
+      assert.deepEqual(props, { trim: ['true'] })
       assert.equal(eat.now().line, 7)
       assert.equal(content, 'Hey dude')
     })
@@ -104,7 +104,7 @@ test.group('Macroable', (group) => {
     assert.plan(4)
 
     macroable.addMacro('note', function (content, props, { eat }) {
-      assert.deepEqual(props, {})
+      assert.deepEqual(props, { trim: ['true'] })
       assert.equal(eat.now().line, 7)
       assert.equal(content, 'Hey dude')
     })
@@ -186,7 +186,11 @@ test.group('Macroable', (group) => {
     assert.plan(2)
 
     macroable.addMacro('note', function (content, props, { eat }) {
-      assert.deepEqual(props, { title: ['hello world'], color: ['grey'] })
+      assert.deepEqual(props, {
+        title: ['hello world'],
+        color: ['grey'],
+        trim: ['true']
+      })
     })
 
     const template = dedent`
@@ -199,6 +203,68 @@ test.group('Macroable', (group) => {
     const result = await exec(template, unifiedStream().use(macroable.transformer).use(html))
     assert.equal(result.contents, dedent`
       <p>Hello world!</p>\n
+    `)
+  })
+
+  test('trim macro content by default', async (assert) => {
+    const macroable = Macroable()
+    assert.plan(2)
+
+    macroable.addMacro('note', function (content, props, { eat }) {
+      assert.equal(content, 'Hey dude')
+    })
+
+    const template = dedent`
+    Hello world!
+
+    [note title=hello world, color=grey]
+        Hey dude
+    [/note]
+    `
+    const result = await exec(template, unifiedStream().use(macroable.transformer).use(html))
+    assert.equal(result.contents, dedent`
+      <p>Hello world!</p>\n
+    `)
+  })
+
+  test('do not trim when instructured', async (assert) => {
+    const macroable = Macroable()
+    assert.plan(2)
+
+    macroable.addMacro('note', function (content, props, { eat }) {
+      assert.equal(content, '    Hey dude')
+    })
+
+    const template = dedent`
+    Hello world!
+
+    [note title=hello world, color=grey, trim=false]
+        Hey dude
+    [/note]
+    `
+    const result = await exec(template, unifiedStream().use(macroable.transformer).use(html))
+    assert.equal(result.contents, dedent`
+      <p>Hello world!</p>\n
+    `)
+  })
+
+  test('do not mess with anchor tags', async (assert) => {
+    const macroable = Macroable()
+    assert.plan(1)
+
+    macroable.addMacro('note', function () {
+      throw new Error('Never expected to be called')
+    })
+
+    const template = dedent`
+    Hello world!
+
+    [note](hello)
+    `
+    const result = await exec(template, unifiedStream().use(macroable.transformer).use(html))
+    assert.equal(result.contents, dedent`
+      <p>Hello world!</p>
+      <p><a href="hello">note</a></p>\n
     `)
   })
 })
