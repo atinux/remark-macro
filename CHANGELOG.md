@@ -1,3 +1,13 @@
+<a name="1.0.3"></a>
+## [1.0.3](https://github.com/poppinss/remark-macro/compare/v1.0.2...v1.0.3) (2018-03-26)
+
+
+### Bug Fixes
+
+* **prop:** prop builder now allows quoted strings ([5dd256d](https://github.com/poppinss/remark-macro/commit/5dd256d))
+
+
+
 <a name="1.0.2"></a>
 ## [1.0.2](https://github.com/poppinss/remark-macro/compare/v1.0.1...v1.0.2) (2018-03-25)
 
