@@ -187,15 +187,15 @@ test.group('Macroable', (group) => {
 
     macroable.addMacro('note', function (content, props, { eat }) {
       assert.deepEqual(props, {
-        title: ['hello world'],
-        color: ['grey']
+        title: 'hello world',
+        color: 'grey'
       })
     })
 
     const template = dedent`
     Hello world!
 
-    [note title=hello world, color=grey]
+    [note title="hello world", color="grey"]
     Hey dude
     [/note]
     `
@@ -365,7 +365,7 @@ test.group('Macroable', (group) => {
     assert.plan(2)
 
     macroable.addMacro('codepen', function (props, { eat }) {
-      assert.deepEqual(props, { src: ['foo'] })
+      assert.deepEqual(props, { src: 'foo' })
     }, true)
 
     const template = dedent`

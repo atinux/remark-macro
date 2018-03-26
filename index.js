@@ -10,8 +10,7 @@
 */
 
 const macroRegex = /^(\s{2})?\[(\w+)(.*)?\](?!\()\n?/
-const Qs = require('haye/dist/haye-qs')
-const JsonPresenter = require('haye/dist/haye-json-presenter')
+const propBuilder = require('./prop')
 const visit = require('unist-util-visit')
 
 /**
@@ -74,7 +73,7 @@ function linterFn (tree, file) {
  * @return {void}
  */
 function processInline (eat, value, { $, spaces, macroName, macro, props }, macroFnPayload) {
-  const propsHash = props ? Qs(props, new JsonPresenter()) : {}
+  const propsHash = props ? propBuilder(props) : {}
   const astNode = macro.fn(propsHash, macroFnPayload)
   astNode ? eat($)(astNode) : eat($)
 }
@@ -159,7 +158,7 @@ function processBlock (eat, value, { $, spaces, macroName, macro, props }, macro
   /**
    * Converting props string to an object
    */
-  const propsHash = props ? Qs(props, new JsonPresenter()) : {}
+  const propsHash = props ? propBuilder(props) : {}
 
   const astNode = macro.fn(children.join('\n'), propsHash, macroFnPayload)
   astNode ? eat(body.join('\n'))(astNode) : eat(body.join('\n'))
