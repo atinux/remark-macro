@@ -9,9 +9,8 @@
  * file that was distributed with this source code.
 */
 
-const macroRegex = /^\[(\w+)(.*)?\]\n/
-const Qs = require('haye/dist/haye-qs')
-const JsonPresenter = require('haye/dist/haye-json-presenter')
+const macroRegex = /^(\s{2})?\[(\w+)(.*)?\](?!\()\n?/
+const propBuilder = require('./prop')
 const visit = require('unist-util-visit')
 
 /**
@@ -57,6 +56,114 @@ function linterFn (tree, file) {
   }
 }
 
+/**
+ * Processes the inline macros
+ *
+ * @method processInline
+ *
+ * @param  {Function}    eat
+ * @param  {String}      value
+ * @param  {String}      options.$
+ * @param  {String}      options.spaces
+ * @param  {String}      options.macroName
+ * @param  {Object}      options.macro
+ * @param  {String}      options.props
+ * @param  {Object}      macroFnPayload
+ *
+ * @return {void}
+ */
+function processInline (eat, value, { $, spaces, macroName, macro, props }, macroFnPayload) {
+  const propsHash = props ? propBuilder(props) : {}
+  const astNode = macro.fn(propsHash, macroFnPayload)
+  astNode ? eat($)(astNode) : eat($)
+}
+
+/**
+ * Processes the block node
+ *
+ * @method processBlock
+ *
+ * @param  {Function}   eat
+ * @param  {String}     value
+ * @param  {String}     options.$
+ * @param  {String}     options.spaces
+ * @param  {String}     options.macroName
+ * @param  {Object}     options.macro
+ * @param  {String}     options.props
+ * @param  {Object}     macroFnPayload
+ *
+ * @return {void}
+ */
+function processBlock (eat, value, { $, spaces, macroName, macro, props }, macroFnPayload) {
+  /**
+   * Keeping a hold whether the tag was ever closed
+   * or not
+   *
+   * @type {Boolean}
+   */
+  let isClosed = false
+
+  /**
+   * Body is everything including opening/closing macro
+   * tags and the inner content
+   *
+   * @type {Array}
+   */
+  const body = []
+
+  /**
+   * Children is the inner content of the macro
+   *
+   * @type {Array}
+   */
+  const children = []
+
+  const lines = value.split('\n')
+
+  /**
+   * Loop until the ending block is found or the
+   * content is over
+   */
+  while (lines.length) {
+    const line = lines.shift()
+    body.push(line)
+
+    /**
+     * Found ending tag. So break
+     * the loop
+     */
+    if (`${line}` === `${spaces}[/${macroName}]`) {
+      isClosed = true
+      break
+    }
+
+    /**
+     * Push the lines, unless the line is same as the macro
+     * starting block
+     */
+    if (!line.startsWith(`${spaces}[${macroName}`)) {
+      children.push(line.replace(spaces, ''))
+    }
+  }
+
+  /**
+   * Done with all the content, but the tag was never
+   * closed
+   */
+  if (!isClosed) {
+    eat($)(badNode(`Unclosed macro: ${macroName}`))
+    return
+  }
+
+  /**
+   * Converting props string to an object
+   */
+  const propsHash = props ? propBuilder(props) : {}
+
+  const astNode = macro.fn(children.join('\n'), propsHash, macroFnPayload)
+  astNode ? eat(body.join('\n'))(astNode) : eat(body.join('\n'))
+}
+
 module.exports = function () {
   /**
    * Hash of registered macros
@@ -66,95 +173,44 @@ module.exports = function () {
   const macros = {}
 
   function transformNodes (eat, value, silent) {
+    /**
+     * Regex match for each line can be pretty expensive, this way
+     * we return right away when line doesn't start with a
+     * macro node
+     */
+    if (!value.trim().startsWith('[')) {
+      return
+    }
+
     const match = macroRegex.exec(value)
     if (!match || match.index !== 0 || silent) {
       return
     }
 
-    const macro = match[1].trim()
+    const $ = match[0]
+    const spaces = typeof (match[1]) === 'undefined' ? '' : match[1]
+    const macroName = match[2].trim()
+    const props = match[3]
 
-    /**
-     * Return when the syntax matches but there is
-     * no registered macro for same
-     */
-    if (!macros[macro]) {
+    const macro = macros[macroName]
+    if (!macro) {
       return
     }
 
     /**
-     * The macro tag and it's properties
-     */
-    const tag = {
-      macro: macro,
-      isClosed: false,
-      body: [],
-      children: [],
-      props: match[2]
-    }
-
-    const lines = value.split('\n')
-
-    /**
-     * Loop over all the lines until we find a closing tag
-     * or the content ends. If there is no ending content
-     * then we add a missing macro node for linter
-     */
-    while (lines.length) {
-      const line = lines.shift()
-
-      tag.body.push(line)
-
-      /**
-       * Found ending tag. So break
-       * the loop
-       */
-      if (line === `[/${macro}]`) {
-        tag.isClosed = true
-        break
-      }
-
-      if (line !== `[${macro}]`) {
-        tag.children.push(line)
-      }
-    }
-
-    /**
-     * Done with all the content, but the tag was never
-     * closed
-     */
-    if (!tag.isClosed) {
-      eat(match[0])(badNode(`Unclosed macro: ${macro}`))
-      return
-    }
-
-    /**
-     * Create a hash of props
-     *
-     * @type {Object}
-     */
-    const propsHash = tag.props ? Qs(tag.props, new JsonPresenter()) : {}
-
-    /**
-     * Payload object to be used for effeciently generating
-     * ast nodes.
-     *
-     * @type {Object}
+     * Payload to be passed to the macro closure
      */
     const macroFnPayload = {
-      transfomer: this,
+      transformer: this,
       eat,
       badNode
     }
 
-    const children = tag.children.join('\n')
-    const body = tag.body.join('\n')
-    const astNode = macros[macro](children, propsHash, macroFnPayload)
+    if (macro.inline) {
+      return processInline(eat, value, { $, spaces, macroName, props, macro }, macroFnPayload)
+    }
 
-    /**
-     * We eat the macro block and replace with the new ast, only when the macroFn
-     * returns a new AST
-     */
-    astNode ? eat(body)(astNode) : eat(body)
+    return processBlock(eat, value, { $, spaces, macroName, props, macro }, macroFnPayload)
   }
 
   return {
@@ -165,6 +221,7 @@ module.exports = function () {
      *
      * @param  {String}   name
      * @param  {Function} fn
+     * @param  {Boolean}  inline
      *
      * @example
      * ```
@@ -182,7 +239,7 @@ module.exports = function () {
      * })
      * ```
      */
-    addMacro (name, fn) {
+    addMacro (name, fn, inline) {
       if (macros[name]) {
         throw new Error(`Cannot redefine the macro ${name}. One already exists`)
       }
@@ -191,7 +248,7 @@ module.exports = function () {
         throw new Error('addMacro expects 2nd argument to be a function')
       }
 
-      macros[name] = fn
+      macros[name] = { fn: fn, inline: inline || false }
       return this
     },
 

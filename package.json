@@ -1,6 +1,6 @@
 {
   "name": "remark-macro",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "A macro system for remarkjs",
   "main": "index.js",
   "browser": "browser.js",
@@ -10,7 +10,7 @@
     "pretest": "npm run lint",
     "prepublishOnly": "npm run build",
     "test": "japa",
-    "build": "babel index.js > browser.js --presets=env"
+    "build": "rollup -c"
   },
   "keywords": [
     "remark",
@@ -20,7 +20,6 @@
   "author": "virk",
   "license": "MIT",
   "dependencies": {
-    "haye": "^2.0.1",
     "unist-util-visit": "^1.3.0"
   },
   "devDependencies": {
