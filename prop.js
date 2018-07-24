@@ -16,7 +16,20 @@ const _ = {
   EQUAL: 61
 }
 
-function mergeNode (node, result) {
+/**
+ * Consumes the node values by moving it to the
+ * result object and empty the node properties.
+ *
+ * Mutates {node and result} both
+ *
+ * @method consumeNode
+ *
+ * @param  {Object}    node
+ * @param  {Object}    result
+ *
+ * @return {void}
+ */
+function consumeNode (node, result) {
   if (!node.key) {
     return
   }
@@ -27,12 +40,21 @@ function mergeNode (node, result) {
 
 module.exports = function (inString) {
   const chars = inString.split('')
+
   const result = {}
+
   const node = {
     key: '',
     value: ''
   }
+
+  /**
+   * Prop tells us where to add char in the node
+   *
+   * @type {String}
+   */
   let prop = 'key'
+
   let underQuotes = false
   let oldCharCode = ''
 
@@ -68,7 +90,7 @@ module.exports = function (inString) {
        * After COMMA, we shift the prop to be key
        */
       prop = 'key'
-      mergeNode(node, result)
+      consumeNode(node, result)
     } else {
       /**
        * Else use all values
@@ -79,6 +101,6 @@ module.exports = function (inString) {
     oldCharCode = charCode
   }
 
-  mergeNode(node, result)
+  consumeNode(node, result)
   return result
 }
