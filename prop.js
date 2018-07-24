@@ -9,6 +9,13 @@
  * file that was distributed with this source code.
 */
 
+const _ = {
+  SPACE: 32,
+  COMMA: 44,
+  QUOTE: 34,
+  EQUAL: 61
+}
+
 function mergeNode (node, result) {
   if (!node.key) {
     return
@@ -33,7 +40,7 @@ module.exports = function (inString) {
     const char = chars.shift()
     const charCode = char.charCodeAt(0)
 
-    if (charCode === 34 && (!chars[0] || [32, 44].indexOf(chars[0].charCodeAt(0)) > -1)) {
+    if (charCode === _.QUOTE && (!chars[0] || [_.SPACE, _.COMMA].indexOf(chars[0].charCodeAt(0)) > -1)) {
       /**
        * The current char is a quote AND (next char doesn't exists OR next char is a SPACE
        * or COMMA)
@@ -44,19 +51,19 @@ module.exports = function (inString) {
        * If under quotes, then use all characters
        */
       node[prop] += char
-    } else if (charCode === 34 && [32, 61].indexOf(oldCharCode) > -1) {
+    } else if (charCode === _.QUOTE && [_.SPACE, _.EQUAL].indexOf(oldCharCode) > -1) {
       /**
        * The current char is a quote AND previous char was a EQUAL TO or SPACE
        */
       underQuotes = true
-    } else if (charCode === 32) {
+    } else if (charCode === _.SPACE) {
       // ignore whitespace when not underQuotes
-    } else if (charCode === 61) {
+    } else if (charCode === _.EQUAL) {
       /**
        * After EQUAL TO, we shift the prop to be value
        */
       prop = 'value'
-    } else if (charCode === 44) {
+    } else if (charCode === _.COMMA) {
       /**
        * After COMMA, we shift the prop to be key
        */
