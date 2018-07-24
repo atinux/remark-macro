@@ -1,6 +1,24 @@
-# Remark Macro
+<div align="center">
+  <div>
+    <img width="500" src="https://res.cloudinary.com/adonisjs/image/upload/q_100/v1532274184/Dimer_Readme_Banner_lyy7wv.svg" alt="Dimer App">
+  </div>
+  <br>
+  <p>
+    <a href="https://dimerapp.com/what-is-dimer">
+      Dimer is an open source project and CMS to help you publish your documentation online.
+    </a>
+  </p>
+  <br>
+  <p>
+    <sub>We believe every project/product is incomplete without documentation. <br /> We want to help you publish user facing documentation, without worrying <code>about tools or code</code> to write.</sub>
+  </p>
+  <br>
+</div>
 
-The library gives you an opportunity to define macros, which can be used inside the markdown as follows.
+# Remark Macro
+> Add macros to remark parser
+
+This library gives you an opportunity to define macros, which can be used inside the markdown as follows.
 
 ```md
 # Hello
